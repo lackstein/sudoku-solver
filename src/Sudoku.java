@@ -8,6 +8,10 @@ class Sudoku
     /* SIZE is the size parameter of the Sudoku puzzle, and N is the square of the size.  For 
      * a standard Sudoku puzzle, SIZE is 3 and N is 9. */
     int SIZE, N;
+    
+    /* Rudimentary effort to keep track of how many iterations we're doing */
+    final boolean DEBUG = false;
+    int COUNT = 0;
 
     /* The grid contains all the numbers in the Sudoku puzzle.  Numbers which have
      * not yet been revealed are stored as 0. */
@@ -15,6 +19,11 @@ class Sudoku
     
     /* Keep track of every move we make in case we need to backtrack */
     Stack<Integer[]> Moves = new Stack<Integer[]>();
+    
+    /* List of values that do not yet appear in each row, column, and quadrant */
+    Map<Integer, LinkedHashSet<Integer>> rowUnknowns = new HashMap<Integer, LinkedHashSet<Integer>>();
+    Map<Integer, Set<Integer>> colUnknowns = new HashMap<Integer, Set<Integer>>();
+    Map<Integer, Set<Integer>> quadUnknowns = new HashMap<Integer, Set<Integer>>();
     
     /* Returns an array representing row i of the board, zero-indexed */
     public Integer[] getRow(int row) {
@@ -60,8 +69,8 @@ class Sudoku
     
     
     /* Returns a set containing the numbers (1..N) that do not appear in the input array */
-    public Set<Integer> getUnknowns(Integer[] arr) {
-    	Set<Integer> unknowns = new LinkedHashSet<Integer>();
+    public LinkedHashSet<Integer> getUnknowns(Integer[] arr) {
+    	LinkedHashSet<Integer> unknowns = new LinkedHashSet<Integer>();
     	
     	// Loop through all possible numbers from 1 to N and check if they exist in the column
     	// If not, add them to unknowns
@@ -74,15 +83,28 @@ class Sudoku
     	return unknowns;
     }
     
+    public void setUnknowns() {
+    	for(int i = 0; i < N; i++) {
+    		this.rowUnknowns.put(i, this.getUnknowns(this.getRow(i)));
+    		this.quadUnknowns.put(i, this.getUnknowns(this.getQuadrant(i)));
+    		this.colUnknowns.put(i, this.getUnknowns(this.getColumn(i)));
+    	}
+    }
+    
     /* Returns a set of all the values that can be legally placed in position (row, column) in the grid */
     public Set<Integer> possibleValues(int row, int column) {
     	int quadrant = (row / SIZE) * SIZE + column / SIZE;
     	//System.out.println(quadrant);
     	
     	// Get the set of unused values for the row, column, and quadrant
-    	Set<Integer> rowUnknowns = this.getUnknowns(this.getRow(row));
-    	Set<Integer> colUnknowns = this.getUnknowns(this.getColumn(column));
-    	Set<Integer> quadUnknowns = this.getUnknowns(this.getQuadrant(quadrant));
+    	//Set<Integer> rowUnknowns = this.getUnknowns(this.getRow(row));
+    	//Set<Integer> colUnknowns = this.getUnknowns(this.getColumn(column));
+    	//Set<Integer> quadUnknowns = this.getUnknowns(this.getQuadrant(quadrant));
+    	
+    	@SuppressWarnings("unchecked")
+		LinkedHashSet<Integer> rowUnknowns = (LinkedHashSet<Integer>) this.rowUnknowns.get(row).clone();
+    	Set<Integer> colUnknowns = (LinkedHashSet<Integer>) this.colUnknowns.get(column);
+    	Set<Integer> quadUnknowns = (LinkedHashSet<Integer>) this.quadUnknowns.get(quadrant);
     	
     	// Take the intersection of the three sets
     	// This provides the list of values that do not appear in the row, column, or quadrant
@@ -107,27 +129,31 @@ class Sudoku
      */
     public int[] nextPosition() {
     	// Initial values that can not be reached under normal circumstances
-    	// If they're returned, then there are no more playable positions
+    	// If they're returned, then there are no more unknown positions
     	int leastUnknownsRow = -1;
     	int leastUnknownsCol = -1;
     	int leastUnknowns = N + 1;
     	
+    	outerLoop:
     	for(int i = 0; i < N; i++) {
     		for(int j = 0; j < N; j++) {
     			// If (i,j) is not unknown, keep moving
     			if(Grid[i][j] != 0)
     				continue;
     			
-    			if(this.possibleValues(i, j).size() < leastUnknowns) {
+    			if(this.possibleValues(i, j).size() == 0) {
+    				// This position is still unknown, but there are no legal values that can be placed in it
+    				// We've reached an unsolvable state, and need to backtrack
+    				leastUnknownsRow = -2;
+    				leastUnknownsCol = -2;
+    				
+    				// No point continuing through the loop because we already know that one of our choices
+    				// must be incorrect
+    				break outerLoop;
+    			} else if(this.possibleValues(i, j).size() < leastUnknowns) {
     				// This position has fewer possible choices than the previously known best position
     				leastUnknownsRow = i;
     				leastUnknownsCol = j;
-    			} else if(this.possibleValues(i, j).size() == 0) {
-    				// This position is still blank, but there are no legal values that can be placed in it
-    				// Either these values will get overwritten by another position that's playable
-    				// or they'll get pushed up the chain, and cause a backtrack
-    				leastUnknownsRow = -2;
-    				leastUnknownsCol = -2;
     			}
     		}
     	}
@@ -149,6 +175,9 @@ class Sudoku
      * backtrack and move to the next possible value for the previous coordinates.
      */
     public boolean solveCoords(int[] coords) {
+    	if(this.DEBUG)
+    		this.COUNT++;
+    	
     	if(coords[0] == -1 && coords[1] == -1) {
     		// Position (-1,-1) is returned by nextPosition when every other position
     		// on the board has been filled
@@ -160,6 +189,8 @@ class Sudoku
     		return false;
     	}
     	
+    	int quadrant = (coords[0] / SIZE) * SIZE + coords[1] / SIZE;
+    	
     	Set<Integer> possibleValues = this.possibleValues(coords);
     	Iterator<Integer> iterator = possibleValues.iterator();
     	
@@ -167,10 +198,14 @@ class Sudoku
     		Integer value = iterator.next();
     		iterator.remove();
     		Grid[coords[0]][coords[1]] = value;
+    		this.rowUnknowns.get(coords[0]).remove(value);
+    		this.colUnknowns.get(coords[1]).remove(value);
+    		this.quadUnknowns.get(quadrant).remove(value);
     		this.Moves.push(new Integer[]{coords[0], coords[1], value});
     		
-    		System.out.println("Placing value at " + coords[0] + ", " + coords[1]);
-    		this.print();
+    		if(this.DEBUG)
+    			System.out.println("Placing value at " + coords[0] + ", " + coords[1]);
+    		//this.print();
     		
     		if(! this.solveCoords(this.nextPosition())) {
     			this.backtrack();
@@ -187,9 +222,18 @@ class Sudoku
      * Pull the previous move off the stack and undo it.
      */
     public void backtrack() {
-    	System.out.println("Backtracking...");
+    	//this.COUNT++;
+    	if(this.DEBUG)
+    		System.out.println("Backtracking...");
 		Integer[] previousMove = this.Moves.pop();
+		int quadrant = (previousMove[0] / SIZE) * SIZE + previousMove[1] / SIZE;
+		
 		Grid[previousMove[0]][previousMove[1]] = 0;
+		
+		// Add the value back to the list of possible unknowns
+		this.rowUnknowns.get(previousMove[0]).add(previousMove[2]);
+		this.colUnknowns.get(previousMove[1]).add(previousMove[2]);
+		this.quadUnknowns.get(quadrant).add(previousMove[2]);
     }
 
 
@@ -210,6 +254,8 @@ class Sudoku
             for( int j = 0; j < N; j++ ) 
                 Grid[i][j] = 0;
         }
+        
+        
     }
 
 
@@ -272,6 +318,8 @@ class Sudoku
                 Grid[i][j] = readInteger( in );
             }
         }
+        
+        this.setUnknowns();
     }
 
 
@@ -328,7 +376,7 @@ class Sudoku
         if( args.length > 0 ) 
             in = new FileInputStream( args[0] );
         else
-        	in = new FileInputStream( "/Users/Noah/Desktop/veryHard4x4.txt" );
+        	in = new FileInputStream( "/Users/Noah/Desktop/hard3x3.txt" );
         	//    in = System.in;
 
         // The first number in all Sudoku files must represent the size of the puzzle.  See
@@ -343,18 +391,25 @@ class Sudoku
 
         // read the rest of the Sudoku puzzle
         s.read( in );
-
+        
         // Solve the puzzle.  We don't currently check to verify that the puzzle can be
         // successfully completed.  You may add that check if you want to, but it is not
         // necessary.
+        final long startTime = System.currentTimeMillis();
         s.solve();
-
+        final long endTime = System.currentTimeMillis();
+        
         // Print out the (hopefully completed!) puzzle
         s.print();
+        
+        if(s.DEBUG)
+        	System.out.println("Total number of iterations: " + s.COUNT);
+        System.out.println("Total execution time: " + (endTime - startTime) );
         
         //System.out.println(Arrays.toString(s.getQuadrant(3)));
         //System.out.println(s.getUnknowns(s.getQuadrant(3)));
         //System.out.println(s.possibleValues(3, 1));
         //System.out.println(Arrays.toString(s.nextPosition()));
+        //System.out.println(Arrays.toString(s.quadrantNextUnknown(3)));
     }
 }
