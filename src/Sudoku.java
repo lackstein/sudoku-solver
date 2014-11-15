@@ -21,7 +21,7 @@ class Sudoku
     Stack<Integer[]> Moves = new Stack<Integer[]>();
     
     /* List of values that do not yet appear in each row, column, and quadrant */
-    Map<Integer, LinkedHashSet<Integer>> rowUnknowns = new HashMap<Integer, LinkedHashSet<Integer>>();
+    Map<Integer, HashSet<Integer>> rowUnknowns = new HashMap<Integer, HashSet<Integer>>();
     Map<Integer, Set<Integer>> colUnknowns = new HashMap<Integer, Set<Integer>>();
     Map<Integer, Set<Integer>> quadUnknowns = new HashMap<Integer, Set<Integer>>();
     
@@ -69,8 +69,8 @@ class Sudoku
     
     
     /* Returns a set containing the numbers (1..N) that do not appear in the input array */
-    public LinkedHashSet<Integer> getUnknowns(Integer[] arr) {
-    	LinkedHashSet<Integer> unknowns = new LinkedHashSet<Integer>();
+    public HashSet<Integer> getUnknowns(Integer[] arr) {
+    	HashSet<Integer> unknowns = new HashSet<Integer>();
     	
     	// Loop through all possible numbers from 1 to N and check if they exist in the column
     	// If not, add them to unknowns
@@ -102,9 +102,9 @@ class Sudoku
     	//Set<Integer> quadUnknowns = this.getUnknowns(this.getQuadrant(quadrant));
     	
     	@SuppressWarnings("unchecked")
-		LinkedHashSet<Integer> rowUnknowns = (LinkedHashSet<Integer>) this.rowUnknowns.get(row).clone();
-    	Set<Integer> colUnknowns = (LinkedHashSet<Integer>) this.colUnknowns.get(column);
-    	Set<Integer> quadUnknowns = (LinkedHashSet<Integer>) this.quadUnknowns.get(quadrant);
+		HashSet<Integer> rowUnknowns = (HashSet<Integer>) this.rowUnknowns.get(row).clone();
+    	Set<Integer> colUnknowns = (HashSet<Integer>) this.colUnknowns.get(column);
+    	Set<Integer> quadUnknowns = (HashSet<Integer>) this.quadUnknowns.get(quadrant);
     	
     	// Take the intersection of the three sets
     	// This provides the list of values that do not appear in the row, column, or quadrant
@@ -229,12 +229,15 @@ class Sudoku
      * Pull the previous move off the stack and undo it.
      */
     public void backtrack() {
-    	//this.COUNT++;
-    	if(this.DEBUG)
+    	if(this.DEBUG) {
+    		this.COUNT++;
     		System.out.println("Backtracking...");
-		Integer[] previousMove = this.Moves.pop();
+    	}
+    		
+    	Integer[] previousMove = this.Moves.pop();
 		int quadrant = (previousMove[0] / SIZE) * SIZE + previousMove[1] / SIZE;
 		
+		// Mark the position on the grid as unknown
 		Grid[previousMove[0]][previousMove[1]] = 0;
 		
 		// Add the value back to the list of possible unknowns
