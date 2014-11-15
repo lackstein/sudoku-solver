@@ -1,8 +1,6 @@
 import java.util.*;
 import java.io.*;
 
-import org.apache.commons.lang3.*;
-
 class Sudoku
 {
     /* SIZE is the size parameter of the Sudoku puzzle, and N is the square of the size.  For 
@@ -72,12 +70,18 @@ class Sudoku
     public HashSet<Integer> getUnknowns(Integer[] arr) {
     	HashSet<Integer> unknowns = new HashSet<Integer>();
     	
-    	// Loop through all possible numbers from 1 to N and check if they exist in the column
+    	// Loop through all possible numbers from 1 to N and check if they exist in the array
     	// If not, add them to unknowns
     	for(int i = 1; i <= N; i++) {
-    		if(! ArrayUtils.contains(arr, i)) {
-    			unknowns.add(i);
+    		boolean exists = false;
+    		for(int value : arr) {
+    			if(value == i) {
+        			exists = true;
+        			break;
+        		}
     		}
+    		if(! exists)
+    			unknowns.add(i);
     	}
     	
     	return unknowns;
@@ -379,7 +383,7 @@ class Sudoku
         if( args.length > 0 ) 
             in = new FileInputStream( args[0] );
         else
-        	in = new FileInputStream( "/Users/Noah/Desktop/veryHard3x3.txt" );
+        	in = new FileInputStream( "/Users/Noah/Desktop/hard3x3.txt" );
         	//    in = System.in;
 
         // The first number in all Sudoku files must represent the size of the puzzle.  See
