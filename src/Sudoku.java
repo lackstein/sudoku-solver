@@ -10,8 +10,8 @@ class Sudoku
     int SIZE, N;
     
     /* Rudimentary effort to keep track of how many iterations we're doing */
-    final boolean DEBUG = false;
-    int COUNT = 0;
+    //final boolean DEBUG = false;
+    //int COUNT = 0;
 
     /* The grid contains all the numbers in the Sudoku puzzle.  Numbers which have
      * not yet been revealed are stored as 0. */
@@ -94,12 +94,6 @@ class Sudoku
     /* Returns a set of all the values that can be legally placed in position (row, column) in the grid */
     public Set<Integer> possibleValues(int row, int column) {
     	int quadrant = (row / SIZE) * SIZE + column / SIZE;
-    	//System.out.println(quadrant);
-    	
-    	// Get the set of unused values for the row, column, and quadrant
-    	//Set<Integer> rowUnknowns = this.getUnknowns(this.getRow(row));
-    	//Set<Integer> colUnknowns = this.getUnknowns(this.getColumn(column));
-    	//Set<Integer> quadUnknowns = this.getUnknowns(this.getQuadrant(quadrant));
     	
     	@SuppressWarnings("unchecked")
 		HashSet<Integer> rowUnknowns = (HashSet<Integer>) this.rowUnknowns.get(row).clone();
@@ -182,8 +176,8 @@ class Sudoku
      * backtrack and move to the next possible value for the previous coordinates.
      */
     public boolean solveCoords(int[] coords) {
-    	if(this.DEBUG)
-    		this.COUNT++;
+    	//if(this.DEBUG)
+    	//	this.COUNT++;
     	
     	if(coords[0] == -1 && coords[1] == -1) {
     		// Position (-1,-1) is returned by nextPosition when every other position
@@ -208,10 +202,10 @@ class Sudoku
     		this.rowUnknowns.get(coords[0]).remove(value);
     		this.colUnknowns.get(coords[1]).remove(value);
     		this.quadUnknowns.get(quadrant).remove(value);
-    		this.Moves.push(new Integer[]{coords[0], coords[1], value});
+    		this.Moves.push(new Integer[]{coords[0], coords[1], quadrant, value});
     		
-    		if(this.DEBUG)
-    			System.out.println("Placing value at " + coords[0] + ", " + coords[1]);
+    		//if(this.DEBUG)
+    		//	System.out.println("Placing value at " + coords[0] + ", " + coords[1]);
     		//this.print();
     		
     		if(! this.solveCoords(this.nextPosition())) {
@@ -229,21 +223,20 @@ class Sudoku
      * Pull the previous move off the stack and undo it.
      */
     public void backtrack() {
-    	if(this.DEBUG) {
-    		this.COUNT++;
-    		System.out.println("Backtracking...");
-    	}
+    	//if(this.DEBUG) {
+    	//	this.COUNT++;
+    	//	System.out.println("Backtracking...");
+    	//}
     		
     	Integer[] previousMove = this.Moves.pop();
-		int quadrant = (previousMove[0] / SIZE) * SIZE + previousMove[1] / SIZE;
 		
 		// Mark the position on the grid as unknown
 		Grid[previousMove[0]][previousMove[1]] = 0;
 		
 		// Add the value back to the list of possible unknowns
-		this.rowUnknowns.get(previousMove[0]).add(previousMove[2]);
-		this.colUnknowns.get(previousMove[1]).add(previousMove[2]);
-		this.quadUnknowns.get(quadrant).add(previousMove[2]);
+		this.rowUnknowns.get(previousMove[0]).add(previousMove[3]);
+		this.colUnknowns.get(previousMove[1]).add(previousMove[3]);
+		this.quadUnknowns.get(previousMove[2]).add(previousMove[3]);
     }
 
 
@@ -386,7 +379,7 @@ class Sudoku
         if( args.length > 0 ) 
             in = new FileInputStream( args[0] );
         else
-        	in = new FileInputStream( "/Users/Noah/Desktop/hard3x3.txt" );
+        	in = new FileInputStream( "/Users/Noah/Desktop/veryHard3x3.txt" );
         	//    in = System.in;
 
         // The first number in all Sudoku files must represent the size of the puzzle.  See
@@ -412,8 +405,8 @@ class Sudoku
         // Print out the (hopefully completed!) puzzle
         s.print();
         
-        if(s.DEBUG)
-        	System.out.println("Total number of iterations: " + s.COUNT);
+        //if(s.DEBUG)
+        //	System.out.println("Total number of iterations: " + s.COUNT);
         System.out.println("Total execution time: " + (endTime - startTime) );
         
         //System.out.println(Arrays.toString(s.getQuadrant(3)));
