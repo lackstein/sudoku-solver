@@ -141,7 +141,9 @@ class Sudoku
     			if(Grid[i][j] != 0)
     				continue;
     			
-    			if(this.possibleValues(i, j).size() == 0) {
+    			int numPossibleValues = this.possibleValues(i, j).size();
+    			
+    			if(numPossibleValues == 0) {
     				// This position is still unknown, but there are no legal values that can be placed in it
     				// We've reached an unsolvable state, and need to backtrack
     				leastUnknownsRow = -2;
@@ -150,10 +152,15 @@ class Sudoku
     				// No point continuing through the loop because we already know that one of our choices
     				// must be incorrect
     				break outerLoop;
-    			} else if(this.possibleValues(i, j).size() < leastUnknowns) {
+    			} else if(numPossibleValues < leastUnknowns) {
     				// This position has fewer possible choices than the previously known best position
     				leastUnknownsRow = i;
     				leastUnknownsCol = j;
+    				
+    				// Finding a position with only one possible value is the best we can do
+    				// Continuing the loop will not provide any better information
+    				if(numPossibleValues == 1)
+    					break outerLoop;
     			}
     		}
     	}
