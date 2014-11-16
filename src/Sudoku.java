@@ -19,6 +19,10 @@ class Sudoku
     // Turns out we don't really need a stack since we can do the backtracking in place in solveCoords()
     //Stack<Integer[]> Moves = new Stack<Integer[]>();
     
+    /* A set of all values that are allowed to be played (1..N)
+     * We clone this set to instantiate each of the subsets of unknown values,
+     * then remove the known values from those sets
+     */
     HashSet<Integer> unknownsSuperSet = new HashSet<Integer>();
     
     /* List of values that do not yet appear in each row, column, and quadrant */
@@ -66,6 +70,11 @@ class Sudoku
     
     /* Returns a set containing the numbers (1..N) that do not appear in the input array */
     public HashSet<Integer> getUnknowns(Integer[] arr) {
+    	// Create a list of all the integers that are allowed to be played on the grid
+    	for(int i = 1; i <= N; i++){
+    		this.unknownsSuperSet.add(i);
+    	}
+    	
     	@SuppressWarnings("unchecked")
 		HashSet<Integer> unknowns = (HashSet<Integer>) this.unknownsSuperSet.clone();
     	
@@ -175,11 +184,6 @@ class Sudoku
      * and replace them with the numbers from 1-9 that satisfy the Sudoku puzzle. */
     public void solve()
     {
-    	for(int i = 1; i <= N; i++){
-    		// Create a list of all the integers that are allowed to be played on the grid
-    		this.unknownsSuperSet.add(i);
-    	}
-    	
     	this.setUnknowns();
     	this.solveCoords(this.nextPosition());
     }
