@@ -7,17 +7,9 @@ class Sudoku
      * a standard Sudoku puzzle, SIZE is 3 and N is 9. */
     int SIZE, N;
     
-    /* Rudimentary effort to keep track of how many iterations we're doing */
-    //final boolean DEBUG = false;
-    //int COUNT = 0;
-
     /* The grid contains all the numbers in the Sudoku puzzle.  Numbers which have
      * not yet been revealed are stored as 0. */
     Integer Grid[][];
-    
-    /* Keep track of every move we make in case we need to backtrack */
-    // Turns out we don't really need a stack since we can do the backtracking in place in solveCoords()
-    //Stack<Integer[]> Moves = new Stack<Integer[]>();
     
     /* A set of all values that are allowed to be played (1..N)
      * We clone this set to instantiate each of the subsets of unknown values,
@@ -52,7 +44,6 @@ class Sudoku
     	
     	for(int i = 0; i < N; i++) {
     		int[] coords = quadrantCoords(quadrant, i);
-        	//System.out.println(row + ", " + col);
     		quad[i] = Grid[coords[0]][coords[1]];
     	}
     	
@@ -69,7 +60,7 @@ class Sudoku
     
     
     /* Returns a set containing the numbers (1..N) that do not appear in the input array */
-    public HashSet<Integer> getUnknowns(Integer[] arr) {
+    public HashSet<Integer> getUnknowns(Integer[] array) {
     	// Create a list of all the integers that are allowed to be played on the grid
     	for(int i = 1; i <= N; i++){
     		this.unknownsSuperSet.add(i);
@@ -78,27 +69,10 @@ class Sudoku
     	@SuppressWarnings("unchecked")
 		HashSet<Integer> unknowns = (HashSet<Integer>) this.unknownsSuperSet.clone();
     	
-    	// Loop through all the values in arr, and delete them from the list of unknowns
-    	for(int value : arr) {
+    	// Loop through all the values in array, and delete them from the list of possible unknowns
+    	for(int value : array) {
     		unknowns.remove(value);
     	}
-    	
-    	// Loop through all possible numbers from 1 to N and check if they exist in the array
-    	// If not, add them to unknowns
-    	/*// Instead of looping through the array and searching for 1..N, 
-    	  // just go through the array and remove each value from the set of all possible unknowns
-    	  // (implemented above)
-    	for(int i = 1; i <= N; i++) {
-    		boolean exists = false;
-    		for(int value : arr) {
-    			if(value == i) {
-        			exists = true;
-        			break;
-        		}
-    		}
-    		if(! exists)
-    			unknowns.add(i);
-    	} */
     	
     	return unknowns;
     }
@@ -195,8 +169,6 @@ class Sudoku
      * backtrack and move to the next possible value for the previous coordinates.
      */
     public boolean solveCoords(int[] coords) {
-    	//if(this.DEBUG)
-    	//	this.COUNT++;
     	
     	if(coords[0] == -1 && coords[1] == -1) {
     		// Position (-1,-1) is returned by nextPosition when every other position
@@ -216,7 +188,6 @@ class Sudoku
     	
     	while(iterator.hasNext()) {
     		Integer value = iterator.next();
-    		//iterator.remove();
     		
     		// Set (row, col) equal to the next possible value
     		Grid[coords[0]][coords[1]] = value;
@@ -226,15 +197,7 @@ class Sudoku
     		this.colUnknowns.get(coords[1]).remove(value);
     		this.quadUnknowns.get(quadrant).remove(value);
     		
-    		// Add the move to the stack in case we need to backtrack
-    		//this.Moves.push(new Integer[]{coords[0], coords[1], quadrant, value});
-    		
-    		//if(this.DEBUG)
-    		//	System.out.println("Placing value at " + coords[0] + ", " + coords[1]);
-    		//this.print();
-    		
     		if(! this.solveCoords(this.nextPosition())) {
-    			//this.backtrack();
     			// Mark the position on the grid as unknown
         		Grid[coords[0]][coords[1]] = 0;
         		
@@ -250,27 +213,6 @@ class Sudoku
     	
     	return false;
     }
-    
-    /*
-     * Pull the previous move off the stack and undo it.
-     *
-    public void backtrack() {
-    	//if(this.DEBUG) {
-    	//	this.COUNT++;
-    	//	System.out.println("Backtracking...");
-    	//}
-    		
-    	Integer[] previousMove = this.Moves.pop();
-		
-		// Mark the position on the grid as unknown
-		Grid[previousMove[0]][previousMove[1]] = 0;
-		
-		// Add the value back to the list of possible unknowns
-		this.rowUnknowns.get(previousMove[0]).add(previousMove[3]);
-		this.colUnknowns.get(previousMove[1]).add(previousMove[3]);
-		this.quadUnknowns.get(previousMove[2]).add(previousMove[3]);
-    }
-	*/
 
     /*****************************************************************************/
     /* NOTE: YOU SHOULD NOT HAVE TO MODIFY ANY OF THE FUNCTIONS BELOW THIS LINE. */
@@ -435,14 +377,6 @@ class Sudoku
         // Print out the (hopefully completed!) puzzle
         s.print();
         
-        //if(s.DEBUG)
-        //	System.out.println("Total number of iterations: " + s.COUNT);
         System.out.println("Total execution time: " + (endTime - startTime) );
-        
-        //System.out.println(Arrays.toString(s.getQuadrant(3)));
-        //System.out.println(s.getUnknowns(s.getQuadrant(3)));
-        //System.out.println(s.possibleValues(3, 1));
-        //System.out.println(Arrays.toString(s.nextPosition()));
-        //System.out.println(Arrays.toString(s.quadrantNextUnknown(3)));
     }
 }
